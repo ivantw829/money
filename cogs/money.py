@@ -8,6 +8,9 @@ with open("config.json","r",encoding="utf-8") as file:
 GUILD, ADMIN = data["guild"], data["admin"]
 
 class button_set(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
     @discord.ui.button(label="給予該用戶錢錢",style=discord.ButtonStyle.green)
     async def add_button_callback(self, button, interaction):
         if ADMIN in [role.id for role in interaction.user.roles]:
@@ -37,7 +40,7 @@ class modal_add_money(discord.ui.Modal):
             return
 
         member = await interaction.guild.fetch_member(member)
-        filepath = F"database/user/{member.id}/money.json"
+        filepath = F"data/user/{member.id}/money.json"
         with open(filepath, "r") as file:
             data = json.load(file)
             data["money"] += int(message)
@@ -66,7 +69,7 @@ class modal_del_money(discord.ui.Modal):
             return
 
         member = await interaction.guild.fetch_member(member)
-        filepath = F"database/user/{member.id}/money.json"
+        filepath = F"data/user/{member.id}/money.json"
         with open(filepath, "r") as file:
             data = json.load(file)
             data["money"] -= int(message)
@@ -100,7 +103,7 @@ class money(commands.Cog):
             return
 
         member = member or ctx.author
-        path = F"database/user/{member.id}"
+        path = F"data/user/{member.id}"
         filepath = F"{path}/money.json"
         if not os.path.isfile(filepath):
             os.makedirs(path)
@@ -114,5 +117,26 @@ class money(commands.Cog):
             description=f"{member.mention}還有{money}元",color=discord.Colour.random())
         await ctx.respond(content=member.id,embed=embed, view=button_set())
         
+    @slash_command(description="查看所有金錢項目")
+    async def top(self,ctx):
+        await ctx.defer()
+
+        users = {}
+        for floder in os.listdir("data/user"):
+            for file in os.listdir(f"data/user/{floder}"):
+                if file == "money.json":
+                    file = f"data/user/{floder}/{file}"
+                    with open(file, "r", encoding="utf-8") as file:
+                        data = json.load(file)
+                        users[floder] = data["money"]
+        users = sorted(users.items(), key=lambda x: x[1], reverse=True)
+        txt = ""
+        for usere in users:
+            if not usere[1] == 0:
+                user = await self.bot.fetch_user(int(usere[0]))
+                txt += f"\n{user}：{usere[1]}"
+        embed = discord.Embed(title="錢錢分佈", description=txt)
+        await ctx.respond(embed=embed)
+
 def setup (bot):
     bot.add_cog(money(bot))

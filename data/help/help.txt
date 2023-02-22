@@ -1,5 +1,6 @@
 >>>>>金錢系統<<<<<
 /help | 顯示此訊息
 /money | 查看,控制金錢
+/top | 查看目前所有流通的金錢
 
 使用[Github](https://github.com/ivantw829/money)開源項目修改
